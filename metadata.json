@@ -1,0 +1,28 @@
+{
+  "name": "Inu Revenue Service",
+  "symbol": "IRS",
+  "description": "A satirical meme coin critiquing traditional tax systems while embracing crypto culture. Powered by Solana.",
+  "image": "https://assets.zyrosite.com/AGB6XNE0BOHnlDyb/shib-YKb64b3b56ip0ved.png",
+  "external_url": "https://irs.dog",
+  "attributes": [
+    {"trait_type": "Theme", "value": „Meme},
+    {"trait_type": "Blockchain", "value": "Solana"},
+    {"trait_type": "Max Supply", "value": "21,000,000,000"},
+    {"trait_type": "Decimals", "value": "6"}
+  ],
+  "social_links": {
+    „X“: "https://x.com/irs_dog",
+    "discord": "https://discord.gg/NND68EmHdh"
+  },
+  "properties": {
+    "files": [
+      {
+        "uri": "https://assets.zyrosite.com/AGB6XNE0BOHnlDyb/shib-YKb64b3b56ip0ved.png",
+        "type": "image/png"
+      }
+    ]
+  },
+  "version": "1.0.0"
+}
+
+
