@@ -1,56 +1,46 @@
-const { Connection, PublicKey, Keypair, Transaction } = require('@solana/web3.js');
-const {
-  createCreateMetadataAccountV2Instruction,
-  DataV2,
-  MetadataProgram,
-} = require('@metaplex-foundation/mpl-token-metadata');
+import { createV1, findMetadataPda, mplTokenMetadata, TokenStandard } from '@metaplex-foundation/mpl-token-metadata';
+import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
+import { signerIdentity, publicKey } from '@metaplex-foundation/umi';
+import fs from 'fs';
 
-(async () => {
-  // Set up Solana connection
-  const connection = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
+const umi = createUmi('https://api.mainnet-beta.solana.com').use(mplTokenMetadata());
 
-  // Replace with your token's mint address and keypair path
-  const mintAddress = new PublicKey('EP2XbbG7fnjjAbqKdrSDxk7XkFbx6zQZRDiKA1vGkDHv');
-  const keypair = Keypair.fromSecretKey(new Uint8Array(require('./path/to/your-keypair.json')));
+// Load keypair
+const walletFile = fs.readFileSync('/Users/mamoja/Documents/my-keypair.json');
+const keypair = umi.eddsa.createKeypairFromSecretKey(new Uint8Array(JSON.parse(walletFile)));
+umi.use(signerIdentity(keypair));
 
-  // Define metadata
-  const metadataPDA = await PublicKey.findProgramAddress(
-    [
-      Buffer.from('metadata'),
-      MetadataProgram.PUBKEY.toBuffer(),
-      mintAddress.toBuffer(),
-    ],
-    MetadataProgram.PUBKEY
-  );
+// Define mint address and metadata
+const mint = publicKey('EP2XbbG7fnjjAbqKdrSDxk7XkFbx6zQZRDiKA1vGkDHv');
+const tokenMetadata = {
+  name: 'Inu Revenue Service',
+  symbol: 'IRS',
+  uri: 'https://raw.githubusercontent.com/MaMoja/irs-metadata/main/metadata.json', // Hosted JSON
+};
 
-  const metadata = {
-    name: 'Inu Revenue Service',
-    symbol: 'IRS',
-    uri: 'https://irs.dog/metadata.json', // Hosted metadata JSON
-    sellerFeeBasisPoints: 0,
-    creators: [
-      {
-        address: keypair.publicKey.toBase58(),
-        verified: true,
-        share: 100,
-      },
-    ],
-  };
+async function addMetadata() {
+  try {
+    // Find metadata account
+    const metadataAccountAddress = await findMetadataPda(umi, { mint });
 
-  const instruction = createCreateMetadataAccountV2Instruction({
-    metadata: metadataPDA[0],
-    mint: mintAddress,
-    mintAuthority: keypair.publicKey,
-    payer: keypair.publicKey,
-    updateAuthority: keypair.publicKey,
-  }, {
-    data: metadata,
-    isMutable: true,
-  });
+    // Add metadata
+    const tx = await createV1(umi, {
+      mint,
+      authority: umi.identity,
+      payer: umi.identity,
+      updateAuthority: umi.identity,
+      name: tokenMetadata.name,
+      symbol: tokenMetadata.symbol,
+      uri: tokenMetadata.uri,
+      sellerFeeBasisPoints: 0, // No royalties
+      tokenStandard: TokenStandard.Fungible,
+    }).sendAndConfirm(umi);
 
-  // Send transaction
-  const transaction = new Transaction().add(instruction);
-  const txSignature = await connection.sendTransaction(transaction, [keypair]);
-  console.log('Metadata added successfully! Transaction Signature:', txSignature);
-})();
+    console.log(`Metadata added successfully! View transaction: https://explorer.solana.com/tx/${tx.signature}?cluster=mainnet-beta`);
+  } catch (error) {
+    console.error('Error adding metadata:', error);
+  }
+}
 
+// Run the function
+addMetadata();
